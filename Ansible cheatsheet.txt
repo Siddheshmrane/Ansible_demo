@@ -1,0 +1,89 @@
+-- On the host machine --
+
+-- creating SSH key -- 
+ssh-keygen -t ed25519 -C "Enter your comment"
+ls -la .ssh
+
+-- Establishing connection with SSH server using key --
+ssh username@ip
+
+-- copy ssh keys to server --
+ssh-copy-id -i ~/.ssh/keyname.pub IpofServer
+ssh -i ~/.ssh/ IpofServer
+
+eval $(ssh-agent)  #gives process id#
+ps aux | grep pid 
+
+ssh-add    #adds identity to server#
+
+-- Adding to Gitrepo --
+
+#add newly created ssh public key to git
+git clone repoURL
+
+cd repository
+git config --global user.name "YourName"
+git config --global user.email "YourEmail"
+git diff filename #check changed files# 
+
+git status
+git diff filename #check changed files 
+git add filename
+git status
+git commit -m "Enter your comment"
+git push origin main 
+
+-- Starting Ansible --
+sudo apt install ansible 
+nano inventory  #creating inventory file. Enter IP address of servers#
+
+ansible all --key-file ~/.shh/ansible -i inventory -m ping  #Enter your key file path#
+nano ansible.cfg
+#Inside config file#
+inventory = inventory
+private_key_file = ~/.ssh/ansible
+#Exit config file#
+
+ansible all -m ping 
+ansible all --list-hosts
+ansible all -m gather_facts --limit #IpofServer
+
+--Running Ansible with Privileged access --
+ansible all -m apt -a update_cache=true --become --ask-become-pass
+
+ansible all -m apt -a name=vim-nox --become --ask-become-pass
+
+ansible all -m apt -a "name=snapd state=latest" --become --ask-become-pass
+
+-- Creating Ansible playbook to install apache2--
+nano playbook_name.yml
+#Inside playbook#
+- hosts: all
+  become: true
+  tasks:
+
+  - name: update repository index
+    apt:
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: install apache2 package
+    apt:
+      name: apache2
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: add php spport for apache
+    apt:
+      name: libapache2-mod-php
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+#End of Playbook#
+
+ansible-playbook --ask-become-pass playbookname.yml
+
+-------------------------------------------------------------------------------------
+
+
+
